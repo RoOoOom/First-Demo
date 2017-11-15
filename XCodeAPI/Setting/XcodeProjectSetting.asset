@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 743737da729d1408d9fe2900ffb58ae9, type: 3}
+  m_Name: XcodeProjectSetting
+  m_EditorClassIdentifier: 
+  EnableBitCode: 0
+  EnableCppEcceptions: 1
+  EnableCppRtti: 1
+  EnableObjcExceptions: 1
+  CopyDirectoryPath: Assets/Editor/XCodeAPI/iPay
+  DevelopmentTeam: 2EZ65L4824
+  FrameworkList:
+  - Accelerate.framework
+  - AddressBook.framework
+  - AddressBookUI.framework
+  - AssetsLibrary.framework
+  - Bugly.framework
+  - CoreData.framework
+  - CoreLocation.framework
+  - CoreFoundation.framework
+  - CoreText.framework
+  - CoreTelephony.framework
+  - CFNetwork.framework
+  - MobileCoreServices.framework
+  - MessageUI.framework
+  - QuartzCore.framework
+  - Security.framework
+  - SystemConfiguration.framework
+  - StoreKit.framework
+  - UserNotifications.framework
+  TbdList:
+  - libsqlite3.tbd
+  - libz.1.tbd
+  - libc++.1.tbd
+  LinkerFlagArray:
+  - -ObjC
+  - -all_load
+  FrameworkSearchPathArray:
+  - $(inherited)
+  - $(PROJECT_DIR)/Frameworks
+  CompilerFlagsSetList: []
+  CopeFilesList:
+  - sourcePath: /Editor/XCodeAPI/UnityAppController.h
+    copyPath: /Classes/UnityAppController.h
+  - sourcePath: /Editor/XCodeAPI/UnityAppController.mm
+    copyPath: /Classes/UnityAppController.mm
+  ApplicationQueriesSchemes:
+  - weixin
+  - wechat
+  - fb290293790992170
+  - alipay
+  - alipayshare
+  privacySensiticeData:
+  - NSLocationAlwaysUsageDescription
+  - NSCameraUsageDescription
+  BundleUrlTypeList:
+  - identifier: weixin
+    bundleSchmes:
+    - wxf3ec02fd6301f76d
+  - identifier: alipay
+    bundleSchmes:
+    - iappay.alipay.com.casino.pokergame
+  BackgroundModes:
+  - remote-notification
