@@ -4,15 +4,24 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class SceneLoaderTestor : MonoBehaviour {
+    bool loaded = false;
     public static int hashcode = 0;
     private List<AssetBundle> m_sceneList = new List<AssetBundle>();
+    public MoveController player;
 	// Use this for initialization
 	void Start () {
         DontDestroyOnLoad(this.gameObject);
-        StartCoroutine(LoadOtherScene("other"));
-        //StartCoroutine(LoadOtherScene("another"));
+        //StartCoroutine(LoadOtherScene("other"));
+        //StartCoroutine(LoadOtherScene(0));
+        SceneManager.LoadSceneAsync("other");
+        loaded = true;
+        
+    }
 
-        Debug.Log(m_sceneList.Count);
+    void Update()
+    {
+        if (loaded)
+            player.UpdateInput();
     }
 
     void OnDestroy()
@@ -33,9 +42,31 @@ public class SceneLoaderTestor : MonoBehaviour {
             else
             {
                 var bundle = download.assetBundle;
-                SceneManager.LoadScene(sceneName);
-                bundle.Unload(true);
+                SceneManager.LoadScene(sceneName, LoadSceneMode.Additive);
+                
+                //bundle.Unload(true);
+                loaded = true;
             }
+        }
+    }
+
+    IEnumerator LoadOtherScene(int index)
+    {
+        Caching.CleanCache();
+        string path = "file://" + Application.dataPath + "/StreamAsset/other.unity3d";
+        WWW www = new WWW(path);
+        yield return www;
+
+        if (www.error == null)
+        {
+            AssetBundle ab = www.assetBundle;
+            AsyncOperation asy = SceneManager.LoadSceneAsync("other" , LoadSceneMode.Additive);
+            yield return asy;
+            loaded = true;
+        }
+        else
+        {
+            Debug.LogError(www.error);
         }
     }
 }
