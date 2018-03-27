@@ -9,18 +9,22 @@ public class MoveController : MonoBehaviour {
     public Transform m_target;
     private float m_distance = 20f;
     float Speed = 10f;
-    float m_step = 5f;
+    float m_step = 2f;
     float m_rotateAngle = 1f;
     float m_rotaDir = 0;
     float m_alrotate = 0;
     public Vector3 m_offset = Vector3.zero;
-    public Vector3 m_originOffset;
+    public Vector3 m_pushDir = Vector3.zero;
+    private Vector3 m_originOffset;
     private Vector3 lastDir;
     private Vector3 curDir;
     private Camera m_mainCam;
     private NavMeshAgent m_chaCtrl;
+    private Animator m_animator;
     private Transform m_camTrans;
     private Quaternion m_quater;
+    private bool attack = false;
+    private bool bowView = false;
 	// Use this for initialization
 	void OnEnable() {
         Debug.Log("STart");
@@ -49,16 +53,23 @@ public class MoveController : MonoBehaviour {
 
             m_originOffset = m_offset;
             m_chaCtrl = GetComponent<NavMeshAgent>();
+
+            m_animator = GetComponent<Animator>();
         }
 
         Debug.Log(transform.forward);
     }
-	
+
+    public void Update()
+    {
+        
+    }
+
 	// Update is called once per frame
 	public void UpdateInput () {        
         float hori = Input.GetAxis("Horizontal");
         float vert = Input.GetAxis("Vertical");
-        Debug.Log(GetComponent<NavMeshAgent>().desiredVelocity);
+
         //Debug.Log("horizontal Vertical " + hori + "  " + vert);
         if (m_ctrlType == ControlType.God)
         {
@@ -79,6 +90,25 @@ public class MoveController : MonoBehaviour {
                     m_target.GetComponent<NavMeshAgent>().SetDestination(rcs.point);
                 }
             }
+        }
+
+        if (Input.GetKeyDown(KeyCode.U))
+        {
+            m_animator.SetTrigger("Attack");
+        }
+
+        if (Input.GetKeyDown(KeyCode.J))
+        {
+            //m_animator.SetFloat("Speed", 0);
+            attack = true;
+            bowView = true;
+            m_animator.SetTrigger("Ready");
+            //StartCoroutine(PauseAction(16));
+        }
+        else if (Input.GetKeyUp(KeyCode.J))
+        {
+            attack = false;
+            m_animator.SetTrigger("Attack");
         }
 
         if (m_ctrlType == ControlType.Player)
@@ -111,14 +141,67 @@ public class MoveController : MonoBehaviour {
                 Vector3 Direction = verVec + horiVec;
                 Vector3 moveVec = (verVec + horiVec) * m_step * Time.deltaTime;
                 //Debug.Log(moveVec);
-                
+
+                if (Direction != Vector3.zero && !attack)
+                {
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(Direction, Vector3.up), 500f * Time.deltaTime);
+                }
+
+                m_animator.SetFloat("Speed", Direction.sqrMagnitude);
                 m_chaCtrl.Move(moveVec);
             }
-
+            
+            
             //GetComponent<NavMeshAgent>().Move(moveVec);
-        }
+        }         
 	}
+    
+    IEnumerator PauseAction(float rate)
+    {
+        AnimatorStateInfo info = m_animator.GetCurrentAnimatorStateInfo(0);
+        Debug.Log(info.IsName("Attack"));
 
+        float time = 0f;
+        float stand = info.length * rate;
+        while (time < stand)
+        {
+            time += Time.deltaTime;
+            yield return new WaitForEndOfFrame();
+        }
+        Debug.Log(time);
+        
+        yield return null;
+    }
+    
+    IEnumerator PauseAction(int frame)
+    {
+        AnimatorStateInfo info = m_animator.GetCurrentAnimatorStateInfo(1);
+        
+        while (!info.IsName("Attack"))
+        {
+            info = m_animator.GetCurrentAnimatorStateInfo(1);
+            yield return new WaitForEndOfFrame();
+        }        
+
+        int count = 0;       
+        while (count < frame)
+        {
+            count++;
+            yield return new WaitForEndOfFrame();
+        }
+
+        if (attack)
+            m_animator.speed = 0f;
+        else
+            m_animator.speed = 1f;
+        yield return null;
+    }
+
+    IEnumerable SetCameraBowView()
+    {
+        yield return new WaitForEndOfFrame();
+
+    }
 
     Vector3 CalculateRotateVec( float angle )
     {
@@ -128,29 +211,37 @@ public class MoveController : MonoBehaviour {
 
     void LateUpdate()
     {
-        /*
-        m_quater = Quaternion.AngleAxis(m_alrotate, Vector3.up);        
-        m_camTrans.rotation = m_quater;
-        Vector3 fowa = transform.position - m_camTrans.position;
-        fowa.y = 0f;
-        m_camTrans.forward = fowa.normalized;
-        */
-        
-        m_camTrans.RotateAround(transform.position, Vector3.up, m_rotaDir);
-        m_offset = m_camTrans.rotation * m_originOffset;
-        
-        Vector3 finalPos = transform.position + m_offset;        
-        
-        Ray checkRay = new Ray(transform.position, finalPos - transform.position);
-        RaycastHit hitPoint;
-        if (Physics.Raycast(checkRay, out hitPoint , Vector3.Distance(finalPos , transform.position)))
+
+        if (m_ctrlType == ControlType.Player)
         {
-            finalPos = hitPoint.point;
+            m_camTrans.RotateAround(transform.position, Vector3.up, m_rotaDir);
+            m_offset = m_camTrans.rotation * m_originOffset;
+
+            Vector3 finalPos = transform.position + m_offset;
+
+            if (attack)
+            {
+                Vector3 offset = transform.rotation * m_originOffset;
+                Vector3 push = m_camTrans.rotation * m_pushDir;
+                finalPos = transform.position + offset;
+                finalPos = finalPos + push;
+
+                m_camTrans.rotation = transform.rotation;
+
+                bowView = false;
+            }
+
+            Ray checkRay = new Ray(m_target.position, finalPos - transform.position);
+            RaycastHit hitPoint;
+            if (Physics.Raycast(checkRay, out hitPoint, Vector3.Distance(finalPos, transform.position)))
+            {
+                finalPos = hitPoint.point;
+            }
+
+            m_camTrans.position = Vector3.Lerp(m_camTrans.position, finalPos, Speed * Time.deltaTime);
+
+            m_rotaDir = 0;
         }
-
-        m_camTrans.position = Vector3.Lerp(m_camTrans.position, finalPos, Speed * Time.deltaTime);
-
-        m_rotaDir = 0;
     }
 
     public void InactiveNav()
@@ -166,7 +257,10 @@ public class MoveController : MonoBehaviour {
     {        
         Gizmos.color = Color.red;
         Gizmos.DrawLine(transform.position, transform.position + GetComponent<NavMeshAgent>().desiredVelocity * 10);
-        //Gizmos.color = Color.green;
-        //Gizmos.DrawLine(transform.position, transform.position + transform.forward * 5);
+    }
+
+    void OnGUI()
+    {       
+        GUI.Label(new Rect(Screen.width / 2, Screen.height / 2, 30, 30), "+");
     }
 }
